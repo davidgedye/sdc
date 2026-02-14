@@ -28,9 +28,9 @@ for img in "$DIR"/*.jpg "$DIR"/*.jpeg "$DIR"/*.png "$DIR"/*.tif "$DIR"/*.tiff; d
     base=$(basename "$img")
     name="${base%.*}"
 
-    # Skip if DZI already exists
-    if [ -f "$DIR/${name}.dzi" ]; then
-        echo "Skipping $base (DZI already exists)"
+    # Skip if DZI exists and is newer than the source image
+    if [ -f "$DIR/${name}.dzi" ] && [ "$DIR/${name}.dzi" -nt "$img" ]; then
+        echo "Skipping $base (up to date)"
         dzi_files+=("${name}.dzi")
         continue
     fi
