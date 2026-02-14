@@ -4,11 +4,25 @@ set -euo pipefail
 REPO_ROOT=$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)
 DEPLOY_DIR="$REPO_ROOT/.deploy"
 
-# Ensure montages have been built
-if [ ! -f "$REPO_ROOT/montages/index.html" ]; then
-    echo "Error: montages/index.html not found. Run util/build.sh first."
+# Find all collection directories (those with a .source file)
+collections=()
+for source_file in "$REPO_ROOT"/*/.source; do
+    [ -f "$source_file" ] || continue
+    collections+=("$(basename "$(dirname "$source_file")")")
+done
+
+if [ ${#collections[@]} -eq 0 ]; then
+    echo "Error: no collections found (no */.source files)"
     exit 1
 fi
+
+# Ensure collections have been built
+for col in "${collections[@]}"; do
+    if [ ! -f "$REPO_ROOT/$col/index.html" ]; then
+        echo "Error: $col/index.html not found. Run util/build.sh $col first."
+        exit 1
+    fi
+done
 
 # Create gh-pages branch if it doesn't exist
 if ! git -C "$REPO_ROOT" rev-parse --verify gh-pages >/dev/null 2>&1; then
@@ -24,7 +38,9 @@ if [ ! -d "$DEPLOY_DIR" ]; then
 fi
 
 # Sync deployment files
-rsync -a --delete "$REPO_ROOT/montages/" "$DEPLOY_DIR/montages/"
+for col in "${collections[@]}"; do
+    rsync -a --delete --exclude .source "$REPO_ROOT/$col/" "$DEPLOY_DIR/$col/"
+done
 cp "$REPO_ROOT/viewer.js" "$DEPLOY_DIR/"
 
 # Commit and push
@@ -33,6 +49,8 @@ git add -A
 if git diff --cached --quiet; then
     echo "Nothing new to deploy."
 else
+    echo "Deploying:"
+    git diff --cached --stat | tail -1
     git commit -m "Deploy $(date -u +%Y-%m-%d)"
     git push origin gh-pages
     echo "Deployed!"
