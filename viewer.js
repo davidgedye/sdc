@@ -1,6 +1,18 @@
 var gap = 0.01; // gap between images in viewport coords
 var totalWidth = 1; // layout fits in [0, 1] horizontally
 
+// Caption data loaded from captions.json (if present)
+var captionLines = 0;
+var captionData = {};
+fetch("captions.json").then(function(r) {
+    if (!r.ok) return;
+    return r.json();
+}).then(function(data) {
+    if (!data) return;
+    captionLines = data.captionLines || 0;
+    captionData = data.captions || {};
+}).catch(function() {});
+
 function computeLayout(images, viewportAspect) {
     var n = images.length;
     var targetHeight = totalWidth / viewportAspect;
@@ -148,9 +160,14 @@ function zoomToImage(i) {
     var bounds = tiledImages[i].getBounds();
     var bx = bounds.width * 0.02;
     var by = bounds.height * 0.02;
+    var captionVp = 0;
+    if (captionLines > 0) {
+        var rectWidth = bounds.width + bx * 2;
+        captionVp = captionLines * 28 * rectWidth / viewerEl.clientWidth;
+    }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
         bounds.x - bx, bounds.y - by,
-        bounds.width + bx * 2, bounds.height + by * 2
+        bounds.width + bx * 2, bounds.height + by * 2 + captionVp
     ));
 }
 
