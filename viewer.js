@@ -228,15 +228,7 @@ var labels = layout.placements.map(function(p) {
     return p.dzi.replace(".dzi", "").replace(/[-_]/g, " ");
 });
 
-var lastFrame = 0;
 viewer.addHandler("update-viewport", function() {
-    var now = performance.now();
-    if (lastFrame) {
-        var ms = now - lastFrame;
-        if (ms > 20) console.warn("slow frame: " + ms.toFixed(1) + "ms");
-    }
-    lastFrame = now;
-
     var ratio = window.devicePixelRatio || 1;
     textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
 
@@ -259,7 +251,6 @@ viewer.addHandler("update-viewport", function() {
     textCtx.textAlign = "center";
     textCtx.textBaseline = "top";
 
-    /* PERF TEST: text drawing disabled
     for (var i = 0; i < tiledImages.length; i++) {
         if (!tiledImages[i]) continue;
         var b = tiledImages[i].getBounds(true);
@@ -273,7 +264,6 @@ viewer.addHandler("update-viewport", function() {
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
         textCtx.fillText(labels[i], pixel.x, pixel.y);
     }
-    */
     textCtx.restore();
 });
 
