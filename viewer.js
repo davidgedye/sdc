@@ -60,12 +60,13 @@ function computeLayout(images, viewportAspect) {
         for (var k = row.start; k < row.end; k++) {
             var idx = order[k];
             var imgW = s * images[idx].w;
+            var imgH = s * images[idx].h;
             placements.push({
                 dzi: images[idx].dzi,
                 x: x,
-                y: y,
+                y: y + row.hMax - imgH,
                 width: imgW,
-                height: s * images[idx].h
+                height: imgH
             });
             x += imgW + gap;
         }
@@ -200,6 +201,71 @@ function findFeaturedIndex() {
     }
     return bestIndex;
 }
+
+// Text overlay: separate canvas layered on top of OSD, redrawn each frame
+var textCanvas = document.createElement("canvas");
+textCanvas.style.cssText = "position:absolute;top:0;left:0;pointer-events:none";
+viewer.container.appendChild(textCanvas);
+var textCtx = textCanvas.getContext("2d");
+
+function resizeTextCanvas() {
+    var ratio = window.devicePixelRatio || 1;
+    textCanvas.width = viewerEl.clientWidth * ratio;
+    textCanvas.height = viewerEl.clientHeight * ratio;
+    textCanvas.style.width = viewerEl.clientWidth + "px";
+    textCanvas.style.height = viewerEl.clientHeight + "px";
+}
+resizeTextCanvas();
+new ResizeObserver(resizeTextCanvas).observe(viewerEl);
+
+// Font size in viewport coords — sized to fit in the gap between rows
+var labelFontVp = gap * 0.6;
+var labelMinPx = 10;
+var labelMaxPx = 24;
+
+// Precompute label text from DZI filenames
+var labels = layout.placements.map(function(p) {
+    return p.dzi.replace(".dzi", "").replace(/[-_]/g, " ");
+});
+
+viewer.addHandler("update-viewport", function() {
+    var ratio = window.devicePixelRatio || 1;
+    textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+
+    var vb = viewer.viewport.getBounds(true);
+    var pxPerUnit = viewerEl.clientWidth / vb.width;
+    var fontPx = labelFontVp * pxPerUnit;
+
+    // Fade out below minimum size
+    var alpha = 1;
+    if (fontPx < labelMinPx) alpha = Math.max(0, fontPx / labelMinPx);
+    if (alpha < 0.02) return;
+
+    // Clamp above maximum size
+    var drawPx = Math.min(fontPx, labelMaxPx);
+
+    textCtx.save();
+    textCtx.scale(ratio, ratio);
+    textCtx.font = Math.round(drawPx) + "px sans-serif";
+    textCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    textCtx.textAlign = "center";
+    textCtx.textBaseline = "top";
+
+    for (var i = 0; i < tiledImages.length; i++) {
+        if (!tiledImages[i]) continue;
+        var b = tiledImages[i].getBounds(true);
+        var cx = b.x + b.width / 2;
+        var ty = b.y + b.height + gap * 0.15;
+
+        // Viewport culling
+        if (cx < vb.x - b.width || cx > vb.x + vb.width + b.width) continue;
+        if (ty < vb.y || ty > vb.y + vb.height) continue;
+
+        var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
+        textCtx.fillText(labels[i], pixel.x, pixel.y);
+    }
+    textCtx.restore();
+});
 
 // Block OSD's default keyboard panning so it doesn't fight with our navigation
 viewer.addHandler("canvas-key", function(event) {
