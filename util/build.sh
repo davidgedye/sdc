@@ -119,4 +119,9 @@ cat > "$OUT/index.html" << HTMLEOF
 </html>
 HTMLEOF
 
+# Copy captions.json from source dir if present
+if [ -f "$SRC/captions.json" ]; then
+    cp "$SRC/captions.json" "$OUT/captions.json"
+fi
+
 echo "Build: ${#built[@]} new/updated, ${#removed[@]} removed, $((${#dzi_files[@]} - ${#built[@]})) up to date, ${#dzi_files[@]} total"
