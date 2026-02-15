@@ -163,7 +163,9 @@ function zoomToImage(i) {
     var captionVp = 0;
     if (captionLines > 0) {
         var rectWidth = bounds.width + bx * 2;
-        captionVp = captionLines * 28 * rectWidth / viewerEl.clientWidth;
+        var rectHeight = bounds.height + by * 2;
+        var scale = Math.min(viewerEl.clientWidth / rectWidth, viewerEl.clientHeight / rectHeight);
+        captionVp = captionLines * 28 / scale;
     }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
         bounds.x - bx, bounds.y - by,
@@ -251,14 +253,13 @@ viewer.addHandler("update-viewport", function() {
 
     var vb = viewer.viewport.getBounds(true);
     var pxPerUnit = viewerEl.clientWidth / vb.width;
-    var fontPx = labelFontVp * pxPerUnit;
 
-    // Fade out below minimum size
+    // Draw text labels below images
+    var fontPx = labelFontVp * pxPerUnit;
     var alpha = 1;
     if (fontPx < labelMinPx) alpha = Math.max(0, fontPx / labelMinPx);
     if (alpha < 0.02) return;
 
-    // Clamp above maximum size
     var drawPx = Math.min(fontPx, labelMaxPx);
 
     textCtx.save();
@@ -272,14 +273,24 @@ viewer.addHandler("update-viewport", function() {
         if (!tiledImages[i]) continue;
         var b = tiledImages[i].getBounds(true);
         var cx = b.x + b.width / 2;
-        var ty = b.y + b.height + gap * 0.15;
+        var offsetVp = Math.min(gap * 0.15, 8 / pxPerUnit);
+        var ty = b.y + b.height + offsetVp;
 
-        // Viewport culling
         if (cx < vb.x - b.width || cx > vb.x + vb.width + b.width) continue;
         if (ty < vb.y || ty > vb.y + vb.height) continue;
 
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
         textCtx.fillText(labels[i], pixel.x, pixel.y);
+
+        // Draw caption box around text for featured image
+        if (captionLines > 0 && isFeatured(tiledImages[i], vb)) {
+            var imgLeft = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x, ty), true);
+            var imgRight = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x + b.width, ty), true);
+            var boxHeight = captionLines * 28;
+            textCtx.strokeStyle = "rgba(255,255,255,0.5)";
+            textCtx.lineWidth = 1;
+            textCtx.strokeRect(imgLeft.x, pixel.y - 4, imgRight.x - imgLeft.x, boxHeight);
+        }
     }
     textCtx.restore();
 });
