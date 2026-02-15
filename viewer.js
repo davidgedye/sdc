@@ -168,7 +168,7 @@ function zoomToImage(i) {
         captionVp = captionLines * 28 / scale;
     }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
-        bounds.x - bx, bounds.y - by,
+        bounds.x - bx, bounds.y - by - captionVp / 2,
         bounds.width + bx * 2, bounds.height + by * 2 + captionVp
     ));
 }
