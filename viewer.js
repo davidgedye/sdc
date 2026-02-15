@@ -237,35 +237,62 @@ function resizeTextCanvas() {
 resizeTextCanvas();
 new ResizeObserver(resizeTextCanvas).observe(viewerEl);
 
+// Font size in viewport coords — sized to fit in the gap between rows
+var labelFontVp = gap * 0.6;
+var labelMinPx = 10;
+var labelMaxPx = 24;
+
+// Precompute label text from DZI filenames
+var labels = layout.placements.map(function(p) {
+    return p.dzi.replace(".dzi", "").replace(/[-_]/g, " ");
+});
+
 viewer.addHandler("update-viewport", function() {
     var ratio = window.devicePixelRatio || 1;
     textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
-    if (captionLines <= 0) return;
 
-    // Draw caption box below the featured image
     var vb = viewer.viewport.getBounds(true);
+    var pxPerUnit = viewerEl.clientWidth / vb.width;
+
+    // Draw text labels below images
+    var fontPx = labelFontVp * pxPerUnit;
+    var alpha = 1;
+    if (fontPx < labelMinPx) alpha = Math.max(0, fontPx / labelMinPx);
+    if (alpha < 0.02) return;
+
+    var drawPx = Math.min(fontPx, labelMaxPx);
+
+    textCtx.save();
+    textCtx.scale(ratio, ratio);
+    textCtx.font = drawPx.toFixed(2) + "px sans-serif";
+    textCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    textCtx.textAlign = "center";
+    textCtx.textBaseline = "top";
+
     for (var i = 0; i < tiledImages.length; i++) {
         if (!tiledImages[i]) continue;
-        if (!isFeatured(tiledImages[i], vb)) continue;
-
         var b = tiledImages[i].getBounds(true);
-        var topLeft = viewer.viewport.pixelFromPoint(
-            new OpenSeadragon.Point(b.x, b.y + b.height), true
-        );
-        var botRight = viewer.viewport.pixelFromPoint(
-            new OpenSeadragon.Point(b.x + b.width, b.y + b.height), true
-        );
-        var boxWidth = botRight.x - topLeft.x;
-        var boxHeight = captionLines * 28;
+        var cx = b.x + b.width / 2;
+        var offsetVp = Math.min(gap * 0.15, 8 / pxPerUnit);
+        var ty = b.y + b.height + offsetVp;
 
-        textCtx.save();
-        textCtx.scale(ratio, ratio);
-        textCtx.strokeStyle = "rgba(255,255,255,0.5)";
-        textCtx.lineWidth = 1;
-        textCtx.strokeRect(topLeft.x, topLeft.y, boxWidth, boxHeight);
-        textCtx.restore();
-        break;
+        if (cx < vb.x - b.width || cx > vb.x + vb.width + b.width) continue;
+        if (ty < vb.y || ty > vb.y + vb.height) continue;
+
+        var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
+        textCtx.fillText(labels[i], pixel.x, pixel.y);
+
+        // Draw caption box around text for featured image
+        if (captionLines > 0 && isFeatured(tiledImages[i], vb)) {
+            var imgLeft = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x, ty), true);
+            var imgRight = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x + b.width, ty), true);
+            var boxHeight = captionLines * 28;
+            textCtx.strokeStyle = "rgba(255,255,255,0.5)";
+            textCtx.lineWidth = 1;
+            textCtx.strokeRect(imgLeft.x, pixel.y - 4, imgRight.x - imgLeft.x, boxHeight);
+        }
     }
+    textCtx.restore();
 });
 
 // Block OSD's default keyboard panning so it doesn't fight with our navigation
