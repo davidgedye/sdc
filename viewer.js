@@ -228,15 +228,7 @@ var labels = layout.placements.map(function(p) {
     return p.dzi.replace(".dzi", "").replace(/[-_]/g, " ");
 });
 
-var lastFrame = 0;
 viewer.addHandler("update-viewport", function() {
-    var now = performance.now();
-    if (lastFrame) {
-        var ms = now - lastFrame;
-        if (ms > 20) console.warn("slow frame: " + ms.toFixed(1) + "ms");
-    }
-    lastFrame = now;
-
     var ratio = window.devicePixelRatio || 1;
     textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
 
