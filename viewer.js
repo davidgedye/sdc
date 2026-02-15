@@ -259,6 +259,7 @@ viewer.addHandler("update-viewport", function() {
     textCtx.textAlign = "center";
     textCtx.textBaseline = "top";
 
+    /* PERF TEST: text drawing disabled
     for (var i = 0; i < tiledImages.length; i++) {
         if (!tiledImages[i]) continue;
         var b = tiledImages[i].getBounds(true);
@@ -272,6 +273,7 @@ viewer.addHandler("update-viewport", function() {
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
         textCtx.fillText(labels[i], pixel.x, pixel.y);
     }
+    */
     textCtx.restore();
 });
 
