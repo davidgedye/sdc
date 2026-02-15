@@ -163,7 +163,9 @@ function zoomToImage(i) {
     var captionVp = 0;
     if (captionLines > 0) {
         var rectWidth = bounds.width + bx * 2;
-        captionVp = captionLines * 28 * rectWidth / viewerEl.clientWidth;
+        var rectHeight = bounds.height + by * 2;
+        var scale = Math.min(viewerEl.clientWidth / rectWidth, viewerEl.clientHeight / rectHeight);
+        captionVp = captionLines * 28 / scale;
     }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
         bounds.x - bx, bounds.y - by,
