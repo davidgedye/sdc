@@ -264,7 +264,7 @@ viewer.addHandler("update-viewport", function() {
 
     textCtx.save();
     textCtx.scale(ratio, ratio);
-    textCtx.font = drawPx.toFixed(2) + "px sans-serif";
+    textCtx.font = drawPx.toFixed(2) + "px freight-text-pro, serif";
     textCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
     textCtx.textAlign = "center";
     textCtx.textBaseline = "top";
