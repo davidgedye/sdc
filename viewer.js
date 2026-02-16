@@ -78,7 +78,8 @@ function computeLayout(images, viewportAspect) {
                 x: x,
                 y: y + row.hMax - imgH,
                 width: imgW,
-                height: imgH
+                height: imgH,
+                row: r
             });
             x += imgW + gap;
         }
@@ -162,10 +163,12 @@ function zoomToImage(i) {
     var by = bounds.height * 0.02;
     var captionVp = 0;
     if (captionLines > 0) {
-        var rectWidth = bounds.width + bx * 2;
-        var rectHeight = bounds.height + by * 2;
-        var scale = Math.min(viewerEl.clientWidth / rectWidth, viewerEl.clientHeight / rectHeight);
-        captionVp = captionLines * 28 / scale;
+        var captionPx = captionLines * 28;
+        var rectW = bounds.width + bx * 2;
+        var baseH = bounds.height + by * 2;
+        var scaleW = viewerEl.clientWidth / rectW;
+        var scaleH = (viewerEl.clientHeight - captionPx) / baseH;
+        captionVp = captionPx / Math.min(scaleW, scaleH);
     }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
         bounds.x - bx, bounds.y - by,
@@ -279,11 +282,18 @@ viewer.addHandler("update-viewport", function() {
         if (cx < vb.x - b.width || cx > vb.x + vb.width + b.width) continue;
         if (ty < vb.y || ty > vb.y + vb.height) continue;
 
+        // No labels if no captions data
+        if (captionLines === 0) continue;
+
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
-        textCtx.fillText(labels[i], pixel.x, pixel.y);
+        var featured = isFeatured(tiledImages[i], vb);
+        var key = layout.placements[i].dzi.replace(".dzi", "");
+        var cap = captionData[key];
+        var text = (cap && cap.title) ? cap.title : labels[i];
+        textCtx.fillText(text, pixel.x, pixel.y);
 
         // Draw caption box around text for featured image
-        if (captionLines > 0 && isFeatured(tiledImages[i], vb)) {
+        if (captionLines > 0 && featured) {
             var imgLeft = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x, ty), true);
             var imgRight = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x + b.width, ty), true);
             var boxHeight = captionLines * 28;
@@ -301,11 +311,45 @@ viewer.addHandler("canvas-key", function(event) {
     event.preventVerticalPan = true;
 });
 
+function findVerticalNeighbor(idx, direction) {
+    var p = layout.placements[idx];
+    var targetRow = p.row + direction;
+    var cx = p.x + p.width / 2;
+    var bestIdx = -1, bestOverlap = 0;
+    for (var j = 0; j < layout.placements.length; j++) {
+        if (layout.placements[j].row !== targetRow) continue;
+        var q = layout.placements[j];
+        var overlapL = Math.max(p.x, q.x);
+        var overlapR = Math.min(p.x + p.width, q.x + q.width);
+        var overlap = overlapR - overlapL;
+        if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            bestIdx = j;
+        }
+    }
+    // If no overlap, pick the nearest by horizontal center
+    if (bestIdx === -1) {
+        var bestDist = Infinity;
+        for (var j = 0; j < layout.placements.length; j++) {
+            if (layout.placements[j].row !== targetRow) continue;
+            var qcx = layout.placements[j].x + layout.placements[j].width / 2;
+            var dist = Math.abs(qcx - cx);
+            if (dist < bestDist) { bestDist = dist; bestIdx = j; }
+        }
+    }
+    return bestIdx;
+}
+
 window.addEventListener("keydown", function(event) {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    var arrows = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+    if (arrows.indexOf(event.key) === -1) return;
     var idx = findFeaturedIndex();
     if (idx === -1) return;
-    var next = idx + (event.key === "ArrowLeft" ? -1 : 1);
+    var next = -1;
+    if (event.key === "ArrowLeft") next = idx - 1;
+    else if (event.key === "ArrowRight") next = idx + 1;
+    else if (event.key === "ArrowUp") next = findVerticalNeighbor(idx, -1);
+    else if (event.key === "ArrowDown") next = findVerticalNeighbor(idx, 1);
     if (next >= 0 && next < tiledImages.length) {
         zoomToImage(next);
     }

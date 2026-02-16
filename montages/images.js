@@ -19,6 +19,7 @@ var images = [
     { "dzi": "marker.dzi", "w": 5612, "h": 5467 },
     { "dzi": "niagara.dzi", "w": 4132, "h": 2583 },
     { "dzi": "niagara2.dzi", "w": 4287, "h": 2847 },
+    { "dzi": "santacruzChris.dzi", "w": 5582, "h": 5712 },
     { "dzi": "tableware.dzi", "w": 3027, "h": 2798 },
     { "dzi": "washmonument.dzi", "w": 6280, "h": 3020 },
     { "dzi": "water.dzi", "w": 7759, "h": 5560 }
