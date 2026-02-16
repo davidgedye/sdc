@@ -162,10 +162,12 @@ function zoomToImage(i) {
     var by = bounds.height * 0.02;
     var captionVp = 0;
     if (captionLines > 0) {
-        var rectWidth = bounds.width + bx * 2;
-        var rectHeight = bounds.height + by * 2;
-        var scale = Math.min(viewerEl.clientWidth / rectWidth, viewerEl.clientHeight / rectHeight);
-        captionVp = captionLines * 28 / scale;
+        var captionPx = captionLines * 28;
+        var rectW = bounds.width + bx * 2;
+        var baseH = bounds.height + by * 2;
+        var scaleW = viewerEl.clientWidth / rectW;
+        var scaleH = (viewerEl.clientHeight - captionPx) / baseH;
+        captionVp = captionPx / Math.min(scaleW, scaleH);
     }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
         bounds.x - bx, bounds.y - by,
@@ -279,11 +281,18 @@ viewer.addHandler("update-viewport", function() {
         if (cx < vb.x - b.width || cx > vb.x + vb.width + b.width) continue;
         if (ty < vb.y || ty > vb.y + vb.height) continue;
 
+        // No labels if no captions data
+        if (captionLines === 0) continue;
+
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
-        textCtx.fillText(labels[i], pixel.x, pixel.y);
+        var featured = isFeatured(tiledImages[i], vb);
+        var key = layout.placements[i].dzi.replace(".dzi", "");
+        var cap = captionData[key];
+        var text = (cap && cap.title) ? cap.title : labels[i];
+        textCtx.fillText(text, pixel.x, pixel.y);
 
         // Draw caption box around text for featured image
-        if (captionLines > 0 && isFeatured(tiledImages[i], vb)) {
+        if (captionLines > 0 && featured) {
             var imgLeft = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x, ty), true);
             var imgRight = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x + b.width, ty), true);
             var boxHeight = captionLines * 28;
