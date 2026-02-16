@@ -78,7 +78,8 @@ function computeLayout(images, viewportAspect) {
                 x: x,
                 y: y + row.hMax - imgH,
                 width: imgW,
-                height: imgH
+                height: imgH,
+                row: r
             });
             x += imgW + gap;
         }
@@ -310,11 +311,45 @@ viewer.addHandler("canvas-key", function(event) {
     event.preventVerticalPan = true;
 });
 
+function findVerticalNeighbor(idx, direction) {
+    var p = layout.placements[idx];
+    var targetRow = p.row + direction;
+    var cx = p.x + p.width / 2;
+    var bestIdx = -1, bestOverlap = 0;
+    for (var j = 0; j < layout.placements.length; j++) {
+        if (layout.placements[j].row !== targetRow) continue;
+        var q = layout.placements[j];
+        var overlapL = Math.max(p.x, q.x);
+        var overlapR = Math.min(p.x + p.width, q.x + q.width);
+        var overlap = overlapR - overlapL;
+        if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            bestIdx = j;
+        }
+    }
+    // If no overlap, pick the nearest by horizontal center
+    if (bestIdx === -1) {
+        var bestDist = Infinity;
+        for (var j = 0; j < layout.placements.length; j++) {
+            if (layout.placements[j].row !== targetRow) continue;
+            var qcx = layout.placements[j].x + layout.placements[j].width / 2;
+            var dist = Math.abs(qcx - cx);
+            if (dist < bestDist) { bestDist = dist; bestIdx = j; }
+        }
+    }
+    return bestIdx;
+}
+
 window.addEventListener("keydown", function(event) {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    var arrows = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+    if (arrows.indexOf(event.key) === -1) return;
     var idx = findFeaturedIndex();
     if (idx === -1) return;
-    var next = idx + (event.key === "ArrowLeft" ? -1 : 1);
+    var next = -1;
+    if (event.key === "ArrowLeft") next = idx - 1;
+    else if (event.key === "ArrowRight") next = idx + 1;
+    else if (event.key === "ArrowUp") next = findVerticalNeighbor(idx, -1);
+    else if (event.key === "ArrowDown") next = findVerticalNeighbor(idx, 1);
     if (next >= 0 && next < tiledImages.length) {
         zoomToImage(next);
     }
