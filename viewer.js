@@ -1,5 +1,6 @@
 var gap = 0.01; // gap between images in viewport coords
 var totalWidth = 1; // layout fits in [0, 1] horizontally
+var initialHash = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
 
 // Caption data loaded from captions.json (if present)
 var captionLines = 0;
@@ -119,6 +120,29 @@ var tileSources = layout.placements.map(function(p, i) {
                     );
                     tiledImages[j].setWidth(layout.placements[j].width);
                 }
+                // Navigate to hash target after intro animation
+                if (initialHash) {
+                    for (var j = 0; j < layout.placements.length; j++) {
+                        if (imageKey(j) === initialHash) {
+                            hashNavPending = true;
+                            (function(target) {
+                                setTimeout(function() {
+                                    hashNavPending = false;
+                                    // Snap all images to final positions immediately
+                                    for (var k = 0; k < tiledImages.length; k++) {
+                                        tiledImages[k].setPosition(
+                                            new OpenSeadragon.Point(gx + layout.placements[k].x, gy + layout.placements[k].y), true
+                                        );
+                                        tiledImages[k].setWidth(layout.placements[k].width, true);
+                                    }
+                                    snapSprings();
+                                    zoomToImage(target);
+                                }, 3000);
+                            })(j);
+                            break;
+                        }
+                    }
+                }
                 // Reset to snappy animation on first interaction
                 function snapSprings() {
                     viewer.viewport.centerSpringX.animationTime = 3.5;
@@ -158,9 +182,15 @@ viewer.addHandler("open", function() {
 
 viewer.viewport.goHome = function() {
     viewer.viewport.fitBounds(homeBounds);
+    history.replaceState(null, "", location.pathname + location.search);
 };
 
+function imageKey(i) {
+    return layout.placements[i].dzi.replace(".dzi", "");
+}
+
 function zoomToImage(i) {
+    location.hash = imageKey(i);
     var bounds = tiledImages[i].getBounds();
     var bx = bounds.width * 0.02;
     var by = bounds.height * 0.02;
@@ -248,16 +278,17 @@ var labelFontVp = gap * 0.6;
 var labelMinPx = 8;
 var labelMaxPx = 18;
 
-// Precompute label text from DZI filenames
-var labels = layout.placements.map(function(p) {
-    return p.dzi.replace(".dzi", "").replace(/[-_]/g, " ");
-});
-
+var hashNavPending = !!initialHash;
 viewer.addHandler("update-viewport", function() {
     var ratio = window.devicePixelRatio || 1;
     textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
 
     var vb = viewer.viewport.getBounds(true);
+
+    // Clear hash when no image is featured (unless navigating to hash on load)
+    if (!hashNavPending && findFeaturedIndex() === -1 && location.hash) {
+        history.replaceState(null, "", location.pathname + location.search);
+    }
     var pxPerUnit = viewerEl.clientWidth / vb.width;
 
     // Draw text labels below images
@@ -288,7 +319,6 @@ viewer.addHandler("update-viewport", function() {
         if (captionLines === 0) continue;
 
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
-        var featured = isFeatured(tiledImages[i], vb);
         var key = layout.placements[i].dzi.replace(".dzi", "");
         var cap = captionData[key];
         var text = cap && cap.title;
