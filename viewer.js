@@ -387,7 +387,7 @@ function stopTour() {
 function tourStep(i) {
     if (i >= tiledImages.length) { stopTour(); return; }
     zoomToImage(i);
-    tourTimer = setTimeout(function() { tourStep(i + 1); }, 5000);
+    tourTimer = setTimeout(function() { tourStep(i + 1); }, 10000);
 }
 
 function cancelTourOnInteraction() {
