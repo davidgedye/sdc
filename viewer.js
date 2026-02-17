@@ -374,9 +374,46 @@ window.addEventListener("hashchange", function() {
     }
 });
 
+// Tour mode: space to start, any interaction cancels
+var tourTimer = null;
+
+function stopTour() {
+    if (tourTimer !== null) {
+        clearTimeout(tourTimer);
+        tourTimer = null;
+    }
+}
+
+function tourStep(i) {
+    if (i >= tiledImages.length) { stopTour(); return; }
+    zoomToImage(i);
+    tourTimer = setTimeout(function() { tourStep(i + 1); }, 5000);
+}
+
+function cancelTourOnInteraction() {
+    if (tourTimer !== null) stopTour();
+}
+
+viewerEl.addEventListener("pointerdown", cancelTourOnInteraction, true);
+viewerEl.addEventListener("wheel", cancelTourOnInteraction, true);
+
 window.addEventListener("keydown", function(event) {
+    // Space toggles tour
+    if (event.key === " ") {
+        event.preventDefault();
+        if (tourTimer !== null) {
+            stopTour();
+            return;
+        }
+        var idx = findFeaturedIndex();
+        tourStep(idx === -1 ? 0 : idx + 1);
+        return;
+    }
+
+    // Arrow keys cancel tour and navigate
     var arrows = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
     if (arrows.indexOf(event.key) === -1) return;
+    stopTour();
     var idx = findFeaturedIndex();
     if (idx === -1) return;
     var next = -1;
