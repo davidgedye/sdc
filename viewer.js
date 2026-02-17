@@ -245,7 +245,7 @@ new ResizeObserver(resizeTextCanvas).observe(viewerEl);
 
 // Font size in viewport coords — sized to fit in the gap between rows
 var labelFontVp = gap * 0.6;
-var labelMinPx = 14;
+var labelMinPx = 8;
 var labelMaxPx = 18;
 
 // Precompute label text from DZI filenames
