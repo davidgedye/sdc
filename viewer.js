@@ -42,7 +42,7 @@ function computeLayout(images, viewportAspect) {
                 if (imgH > hMax) hMax = imgH;
                 i++;
             }
-            rows.push({ start: start, end: i, hMax: hMax });
+            rows.push({ start: start, end: i, hMax: hMax, rowW: rowW });
         }
         return rows;
     }
@@ -69,7 +69,7 @@ function computeLayout(images, viewportAspect) {
     var y = 0;
     for (var r = 0; r < rows.length; r++) {
         var row = rows[r];
-        var x = 0;
+        var x = (totalWidth - row.rowW) / 2;
         for (var k = row.start; k < row.end; k++) {
             var idx = order[k];
             var imgW = s * images[idx].w;
