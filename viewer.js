@@ -363,6 +363,17 @@ function findVerticalNeighbor(idx, direction) {
     return bestIdx;
 }
 
+window.addEventListener("hashchange", function() {
+    if (!location.hash) return;
+    var key = decodeURIComponent(location.hash.slice(1));
+    for (var i = 0; i < layout.placements.length; i++) {
+        if (imageKey(i) === key) {
+            zoomToImage(i);
+            return;
+        }
+    }
+});
+
 window.addEventListener("keydown", function(event) {
     var arrows = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
     if (arrows.indexOf(event.key) === -1) return;
