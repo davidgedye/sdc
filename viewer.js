@@ -293,20 +293,21 @@ viewer.addHandler("update-viewport", function() {
 
     // Draw text labels below images
     var fontPx = labelFontVp * pxPerUnit;
-    var alpha = 1;
-    if (fontPx < labelMinPx) return;
-
-    var drawPx = Math.min(fontPx, labelMaxPx);
+    var labelsVisible = fontPx >= labelMinPx;
+    var drawPx = labelsVisible ? Math.min(fontPx, labelMaxPx) : labelMinPx;
 
     textCtx.save();
     textCtx.scale(ratio, ratio);
     textCtx.font = "300 " + drawPx.toFixed(2) + "px Raleway, sans-serif";
-    textCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    textCtx.fillStyle = "rgba(255,255,255,1)";
     textCtx.textAlign = "center";
     textCtx.textBaseline = "top";
 
     for (var i = 0; i < tiledImages.length; i++) {
         if (!tiledImages[i]) continue;
+        // Skip non-featured images when labels are too small
+        if (!labelsVisible && !isFeatured(tiledImages[i], vb)) continue;
+
         var b = tiledImages[i].getBounds(true);
         var cx = b.x + b.width / 2;
         var offsetVp = Math.min(gap * 0.15, 8 / pxPerUnit);
