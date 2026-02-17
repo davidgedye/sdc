@@ -245,8 +245,8 @@ new ResizeObserver(resizeTextCanvas).observe(viewerEl);
 
 // Font size in viewport coords — sized to fit in the gap between rows
 var labelFontVp = gap * 0.6;
-var labelMinPx = 10;
-var labelMaxPx = 24;
+var labelMinPx = 14;
+var labelMaxPx = 18;
 
 // Precompute label text from DZI filenames
 var labels = layout.placements.map(function(p) {
@@ -270,7 +270,7 @@ viewer.addHandler("update-viewport", function() {
 
     textCtx.save();
     textCtx.scale(ratio, ratio);
-    textCtx.font = drawPx.toFixed(2) + "px freight-text-pro, serif";
+    textCtx.font = "300 " + drawPx.toFixed(2) + "px Raleway, sans-serif";
     textCtx.fillStyle = "rgba(255,255,255," + alpha + ")";
     textCtx.textAlign = "center";
     textCtx.textBaseline = "top";
@@ -292,18 +292,9 @@ viewer.addHandler("update-viewport", function() {
         var featured = isFeatured(tiledImages[i], vb);
         var key = layout.placements[i].dzi.replace(".dzi", "");
         var cap = captionData[key];
-        var text = (cap && cap.title) ? cap.title : labels[i];
+        var text = cap && cap.title;
+        if (!text) continue;
         textCtx.fillText(text, pixel.x, pixel.y);
-
-        // Draw caption box around text for featured image
-        if (captionLines > 0 && featured) {
-            var imgLeft = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x, ty), true);
-            var imgRight = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(b.x + b.width, ty), true);
-            var boxHeight = captionLines * 28;
-            textCtx.strokeStyle = "rgba(255,255,255,0.5)";
-            textCtx.lineWidth = 1;
-            textCtx.strokeRect(imgLeft.x, pixel.y - 4, imgRight.x - imgLeft.x, boxHeight);
-        }
     }
     textCtx.restore();
 });
