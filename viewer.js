@@ -263,8 +263,7 @@ viewer.addHandler("update-viewport", function() {
     // Draw text labels below images
     var fontPx = labelFontVp * pxPerUnit;
     var alpha = 1;
-    if (fontPx < labelMinPx) alpha = Math.max(0, fontPx / labelMinPx);
-    if (alpha < 0.02) return;
+    if (fontPx < labelMinPx) return;
 
     var drawPx = Math.min(fontPx, labelMaxPx);
 
