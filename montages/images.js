@@ -8,6 +8,7 @@ var images = [
     { "dzi": "clovelly.dzi", "w": 10806, "h": 4277 },
     { "dzi": "diagonals.dzi", "w": 3024, "h": 4022 },
     { "dzi": "docks.dzi", "w": 4238, "h": 4282 },
+    { "dzi": "ebbyscliff.dzi", "w": 5205, "h": 2811 },
     { "dzi": "foggydisco.dzi", "w": 8063, "h": 3024 },
     { "dzi": "foggytrees.dzi", "w": 3040, "h": 4029 },
     { "dzi": "fuji1.dzi", "w": 4024, "h": 4470 },
@@ -17,6 +18,7 @@ var images = [
     { "dzi": "jordanpond2.dzi", "w": 4026, "h": 3946 },
     { "dzi": "kerrypark.dzi", "w": 7014, "h": 3979 },
     { "dzi": "leaf.dzi", "w": 4044, "h": 5345 },
+    { "dzi": "mainerock.dzi", "w": 4038, "h": 3013 },
     { "dzi": "marker.dzi", "w": 5612, "h": 5467 },
     { "dzi": "niagara.dzi", "w": 4132, "h": 2583 },
     { "dzi": "niagara2.dzi", "w": 4287, "h": 2847 },
@@ -24,6 +26,8 @@ var images = [
     { "dzi": "oldtrainline.dzi", "w": 4033, "h": 1793 },
     { "dzi": "santacruzChris.dzi", "w": 5582, "h": 5712 },
     { "dzi": "tableware.dzi", "w": 3027, "h": 2798 },
+    { "dzi": "tunnel.dzi", "w": 1749, "h": 1816 },
+    { "dzi": "uptrees.dzi", "w": 7887, "h": 3024 },
     { "dzi": "washmonument.dzi", "w": 6280, "h": 3020 },
     { "dzi": "water.dzi", "w": 7759, "h": 5560 }
 ];
