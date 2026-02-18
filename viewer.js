@@ -120,9 +120,6 @@ var tileSources = layout.placements.map(function(p, i) {
                     );
                     tiledImages[j].setWidth(layout.placements[j].width);
                 }
-                // Show hint if not navigating to a hash target
-                if (!initialHash) showIntro();
-
                 // Navigate to hash target after intro animation
                 if (initialHash) {
                     for (var j = 0; j < layout.placements.length; j++) {
@@ -258,38 +255,6 @@ function findFeaturedIndex() {
         if (f > bestFrac) { bestFrac = f; bestIndex = i; }
     }
     return bestIndex;
-}
-
-// Intro overlay — device-appropriate hint shown after images load
-var introStyle = document.createElement('style');
-introStyle.textContent =
-    '.sdc-intro-container{position:absolute;width:100%;top:50%;left:0;transform:translateY(-50%);pointer-events:none;z-index:1000}' +
-    '.sdc-intro{display:none;width:fit-content;max-width:92.5%;margin:0 auto;background:rgba(255,255,255,0.8);padding:8px 16px;border-radius:10px;font-family:Arial,sans-serif;font-size:24px;color:#333;box-shadow:10px 10px 30px rgba(0,0,0,0.3);cursor:pointer;pointer-events:auto}';
-document.head.appendChild(introStyle);
-
-var introContainer = document.createElement('div');
-introContainer.className = 'sdc-intro-container';
-var introEl = document.createElement('div');
-introEl.className = 'sdc-intro';
-var isTouchDevice = navigator.maxTouchPoints > 0;
-var hasMouse = window.matchMedia('(pointer: fine)').matches;
-introEl.textContent = (isTouchDevice && !hasMouse)
-    ? 'Pinch the screen to zoom'
-    : 'To zoom use your scroll wheel or two fingers on your trackpad';
-introContainer.appendChild(introEl);
-document.body.appendChild(introContainer);
-
-var introTimeout;
-function showIntro() {
-    clearTimeout(introTimeout);
-    introTimeout = setTimeout(function() {
-        introEl.style.display = 'block';
-        introEl.addEventListener('click', closeIntro);
-        viewer.addOnceHandler('zoom', closeIntro);
-    }, 1000);
-}
-function closeIntro() {
-    introEl.style.display = 'none';
 }
 
 // Text overlay: separate canvas layered on top of OSD, redrawn each frame
