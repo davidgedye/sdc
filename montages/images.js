@@ -9,6 +9,7 @@ var images = [
     { "dzi": "diagonals.dzi", "w": 3024, "h": 4022 },
     { "dzi": "docks.dzi", "w": 4238, "h": 4282 },
     { "dzi": "ebbyscliff.dzi", "w": 5205, "h": 2811 },
+    { "dzi": "ferns.dzi", "w": 3023, "h": 4024 },
     { "dzi": "foggydisco.dzi", "w": 8063, "h": 3024 },
     { "dzi": "foggytrees.dzi", "w": 3040, "h": 4029 },
     { "dzi": "fuji1.dzi", "w": 4024, "h": 4470 },
