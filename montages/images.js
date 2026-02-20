@@ -3,7 +3,7 @@ var images = [
     { "dzi": "backlit_trees.dzi", "w": 5689, "h": 3676 },
     { "dzi": "bamboo.dzi", "w": 4031, "h": 3020 },
     { "dzi": "birthday.dzi", "w": 5875, "h": 3000 },
-    { "dzi": "canonbeach.dzi", "w": 2499, "h": 2297 },
+    { "dzi": "canonbeach.dzi", "w": 2498, "h": 2297 },
     { "dzi": "chrisLA.dzi", "w": 5692, "h": 4288 },
     { "dzi": "clovelly.dzi", "w": 10806, "h": 4277 },
     { "dzi": "diagonals.dzi", "w": 3024, "h": 4022 },
