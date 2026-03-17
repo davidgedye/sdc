@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>watersedge — Seadragon Collection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a1a; }
+        #viewer { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="viewer"></div>
+    <div id="debug" style="position:fixed;top:8px;right:8px;color:white;font:11px monospace;background:rgba(0,0,0,0.6);padding:4px 8px;pointer-events:none;z-index:999;border-radius:3px"></div>
+    <script src="https://cdn.jsdelivr.net/npm/openseadragon@5.0/build/openseadragon/openseadragon.min.js"></script>
+    <script src="images.js"></script>
+    <script>
+        var viewerConfig = {
+            gap: 0.0375,
+            gapY: 0.045,
+            gutterFraction: 0.03,
+            gutterFractionY: 0.036,
+            sortBy: "area",
+            sortReverse: true,
+            labelFontVp: 0.0158,
+            labelMinPx: 15,
+            labelMaxPx: 17.6,
+            captionLineSizes: [1.0, 0.72],
+            subtitleMinZoom: 1.7
+        };
+    </script>
+    <script src="../viewer.js"></script>
+    <script>
+        var debugEl = document.getElementById("debug");
+        viewer.addHandler("update-viewport", function() {
+            var vb = viewer.viewport.getBounds(true);
+            var pxPerUnit = viewerEl.clientWidth / vb.width;
+            var fontPx = (labelFontVp * pxPerUnit).toFixed(1);
+            debugEl.textContent = "zoom: " + viewer.viewport.getZoom().toFixed(4) + "  fontPx: " + fontPx;
+        });
+    </script>
+</body>
+</html>

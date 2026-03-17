@@ -1,4 +1,6 @@
-var gap = 0.01; // gap between images in viewport coords
+var cfg = (typeof viewerConfig !== "undefined" && viewerConfig) || {};
+var gap = cfg.gap !== undefined ? cfg.gap : 0.01;
+var gapY = cfg.gapY !== undefined ? cfg.gapY : gap;
 var totalWidth = 1; // layout fits in [0, 1] horizontally
 var initialHash = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
 
@@ -23,9 +25,28 @@ function computeLayout(images, viewportAspect) {
     // image would exceed totalWidth, then start a new row.
     // Binary search for s so total layout height ≈ targetHeight.
 
-    // Sort by height so similar-height images share rows, minimizing dead space
+    // Sort images for row-packing. Default: by height. Config can override.
     var order = images.map(function(_, i) { return i; });
-    order.sort(function(a, b) { return images[a].h - images[b].h; });
+    if (cfg.imageOrder && cfg.imageOrder.length) {
+        var keyToIdx = {};
+        images.forEach(function(img, i) { keyToIdx[img.dzi.replace(/\.dzi$/, "")] = i; });
+        var seen = {};
+        order = [];
+        cfg.imageOrder.forEach(function(key) {
+            if (keyToIdx[key] !== undefined && !seen[key]) {
+                order.push(keyToIdx[key]);
+                seen[key] = true;
+            }
+        });
+        images.forEach(function(_, i) {
+            if (!seen[images[i].dzi.replace(/\.dzi$/, "")]) order.push(i);
+        });
+    } else if (cfg.sortBy === "area") {
+        order.sort(function(a, b) { return images[a].w * images[a].h - images[b].w * images[b].h; });
+    } else {
+        order.sort(function(a, b) { return images[a].h - images[b].h; });
+    }
+    if (cfg.sortReverse) order.reverse();
 
     function packRows(s) {
         var rows = [];
@@ -51,7 +72,7 @@ function computeLayout(images, viewportAspect) {
         var rows = packRows(s);
         var h = 0;
         for (var i = 0; i < rows.length; i++) h += rows[i].hMax;
-        return h + (rows.length - 1) * gap;
+        return h + (rows.length - 1) * gapY;
     }
 
     // Binary search: larger s => bigger images => taller layout
@@ -84,7 +105,7 @@ function computeLayout(images, viewportAspect) {
             });
             x += imgW + gap;
         }
-        y += row.hMax + gap;
+        y += row.hMax + gapY;
     }
 
     return { placements: placements, totalHeight: y - gap };
@@ -97,8 +118,10 @@ var layout = computeLayout(images, viewportAspect);
 var tiledImages = [];
 var loaded = 0;
 var startScale = 0.001;
-var gx = totalWidth * 0.01;
-var gy = layout.totalHeight * 0.01;
+var gutterFraction = cfg.gutterFraction !== undefined ? cfg.gutterFraction : 0.01;
+var gutterFractionY = cfg.gutterFractionY !== undefined ? cfg.gutterFractionY : gutterFraction;
+var gx = totalWidth * gutterFraction;
+var gy = layout.totalHeight * gutterFractionY;
 var tileSources = layout.placements.map(function(p, i) {
     var centerX = gx + p.x + p.width / 2;
     var centerY = gy + p.y + p.height / 2;
@@ -184,6 +207,19 @@ viewer.viewport.goHome = function() {
     viewer.viewport.fitBounds(homeBounds);
     history.replaceState(null, "", location.pathname + location.search);
 };
+
+function relayout() {
+    if (loaded < images.length) return;
+    layout = computeLayout(images, viewerEl.clientWidth / viewerEl.clientHeight);
+    gy = layout.totalHeight * gutterFractionY;
+    homeBounds = new OpenSeadragon.Rect(0, 0, totalWidth + gx * 2, layout.totalHeight + gy * 2);
+    for (var j = 0; j < tiledImages.length; j++) {
+        if (!tiledImages[j]) continue;
+        tiledImages[j].setPosition(new OpenSeadragon.Point(gx + layout.placements[j].x, gy + layout.placements[j].y), true);
+        tiledImages[j].setWidth(layout.placements[j].width, true);
+    }
+    viewer.viewport.fitBounds(homeBounds, true);
+}
 
 function imageKey(i) {
     return layout.placements[i].dzi.replace(".dzi", "");
@@ -271,12 +307,19 @@ function resizeTextCanvas() {
     textCanvas.style.height = viewerEl.clientHeight + "px";
 }
 resizeTextCanvas();
-new ResizeObserver(resizeTextCanvas).observe(viewerEl);
+var relayoutTimer = null;
+new ResizeObserver(function() {
+    resizeTextCanvas();
+    clearTimeout(relayoutTimer);
+    relayoutTimer = setTimeout(relayout, 150);
+}).observe(viewerEl);
 
 // Font size in viewport coords — sized to fit in the gap between rows
-var labelFontVp = gap * 0.6;
-var labelMinPx = 8;
-var labelMaxPx = 18;
+var labelFontVp = cfg.labelFontVp !== undefined ? cfg.labelFontVp : gap * 0.6;
+var labelMinPx = cfg.labelMinPx !== undefined ? cfg.labelMinPx : 8;
+var labelMaxPx = cfg.labelMaxPx !== undefined ? cfg.labelMaxPx : 18;
+var captionLineSizes = cfg.captionLineSizes || [1.0];
+var subtitleMinZoom = cfg.subtitleMinZoom !== undefined ? cfg.subtitleMinZoom : 0;
 
 var hashNavPending = !!initialHash;
 viewer.addHandler("update-viewport", function() {
@@ -298,7 +341,6 @@ viewer.addHandler("update-viewport", function() {
 
     textCtx.save();
     textCtx.scale(ratio, ratio);
-    textCtx.font = "300 " + drawPx.toFixed(2) + "px Raleway, sans-serif";
     textCtx.fillStyle = "rgba(255,255,255,1)";
     textCtx.textAlign = "center";
     textCtx.textBaseline = "top";
@@ -322,9 +364,20 @@ viewer.addHandler("update-viewport", function() {
         var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
         var key = layout.placements[i].dzi.replace(".dzi", "");
         var cap = captionData[key];
-        var text = cap && cap.title;
-        if (!text) continue;
-        textCtx.fillText(text, pixel.x, pixel.y);
+        if (!cap) continue;
+
+        var lines = [];
+        if (cap.title) lines.push({ text: cap.title, size: captionLineSizes[0] || 1.0 });
+        if (cap.subtitle && viewer.viewport.getZoom() >= subtitleMinZoom) lines.push({ text: cap.subtitle, size: captionLineSizes[1] !== undefined ? captionLineSizes[1] : captionLineSizes[0] || 1.0 });
+        if (!lines.length) continue;
+
+        var lineY = pixel.y;
+        for (var li = 0; li < lines.length; li++) {
+            var linePx = drawPx * lines[li].size;
+            textCtx.font = "300 " + linePx.toFixed(2) + "px Raleway, sans-serif";
+            textCtx.fillText(lines[li].text, pixel.x, lineY);
+            lineY += linePx * 1.4;
+        }
     }
     textCtx.restore();
 });
