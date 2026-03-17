@@ -97,6 +97,9 @@ echo "];" >> "$OUT/images.js"
 # Get directory basename for the page title
 collection_name=$(basename "$OUT")
 
+if [ -f "$OUT/index.html" ]; then
+    echo "Preserving existing index.html"
+else
 cat > "$OUT/index.html" << HTMLEOF
 <!DOCTYPE html>
 <html lang="en">
@@ -121,6 +124,7 @@ cat > "$OUT/index.html" << HTMLEOF
 </body>
 </html>
 HTMLEOF
+fi
 
 # captions.json is managed directly in the collection directory (not copied from source)
 
