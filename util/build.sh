@@ -33,7 +33,7 @@ mkdir -p "$OUT"
 dzi_files=()
 built=()
 
-for img in "$SRC"/*.jpg "$SRC"/*.jpeg "$SRC"/*.png "$SRC"/*.tif "$SRC"/*.tiff; do
+for img in "$SRC"/*.jpg "$SRC"/*.jpeg "$SRC"/*.JPG "$SRC"/*.JPEG "$SRC"/*.png "$SRC"/*.PNG "$SRC"/*.tif "$SRC"/*.tiff; do
     [ -f "$img" ] || continue
 
     base=$(basename "$img")
@@ -122,9 +122,6 @@ cat > "$OUT/index.html" << HTMLEOF
 </html>
 HTMLEOF
 
-# Copy captions.json from source dir if present
-if [ -f "$SRC/captions.json" ]; then
-    cp "$SRC/captions.json" "$OUT/captions.json"
-fi
+# captions.json is managed directly in the collection directory (not copied from source)
 
 echo "Build: ${#built[@]} new/updated, ${#removed[@]} removed, $((${#dzi_files[@]} - ${#built[@]})) up to date, ${#dzi_files[@]} total"
