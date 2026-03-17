@@ -15,7 +15,6 @@
 </head>
 <body>
     <div id="viewer"></div>
-    <div id="debug" style="position:fixed;top:8px;right:8px;color:white;font:11px monospace;background:rgba(0,0,0,0.6);padding:4px 8px;pointer-events:none;z-index:999;border-radius:3px"></div>
     <script src="https://cdn.jsdelivr.net/npm/openseadragon@5.0/build/openseadragon/openseadragon.min.js"></script>
     <script src="images.js"></script>
     <script>
@@ -35,13 +34,17 @@
     </script>
     <script src="../viewer.js"></script>
     <script>
-        var debugEl = document.getElementById("debug");
-        viewer.addHandler("update-viewport", function() {
-            var vb = viewer.viewport.getBounds(true);
-            var pxPerUnit = viewerEl.clientWidth / vb.width;
-            var fontPx = (labelFontVp * pxPerUnit).toFixed(1);
-            debugEl.textContent = "zoom: " + viewer.viewport.getZoom().toFixed(4) + "  fontPx: " + fontPx;
-        });
+        if (new URLSearchParams(location.search).has("debug")) {
+            var debugEl = document.createElement("div");
+            debugEl.style.cssText = "position:fixed;top:8px;right:8px;color:white;font:11px monospace;background:rgba(0,0,0,0.6);padding:4px 8px;pointer-events:none;z-index:999;border-radius:3px";
+            document.body.appendChild(debugEl);
+            viewer.addHandler("update-viewport", function() {
+                var vb = viewer.viewport.getBounds(true);
+                var pxPerUnit = viewerEl.clientWidth / vb.width;
+                var fontPx = (labelFontVp * pxPerUnit).toFixed(1);
+                debugEl.textContent = "zoom: " + viewer.viewport.getZoom().toFixed(4) + "  fontPx: " + fontPx;
+            });
+        }
     </script>
 </body>
 </html>
