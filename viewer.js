@@ -4,18 +4,6 @@ var gapY = cfg.gapY !== undefined ? cfg.gapY : gap;
 var totalWidth = 1; // layout fits in [0, 1] horizontally
 var initialHash = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
 
-// Caption data loaded from captions.json (if present)
-var captionLines = 0;
-var captionData = {};
-fetch("captions.json").then(function(r) {
-    if (!r.ok) return;
-    return r.json();
-}).then(function(data) {
-    if (!data) return;
-    captionLines = data.captionLines || 0;
-    captionData = data.captions || {};
-}).catch(function() {});
-
 function computeLayout(images, viewportAspect) {
     var n = images.length;
     var targetHeight = totalWidth / viewportAspect;
@@ -230,18 +218,9 @@ function zoomToImage(i) {
     var bounds = tiledImages[i].getBounds();
     var bx = bounds.width * 0.02;
     var by = bounds.height * 0.02;
-    var captionVp = 0;
-    if (captionLines > 0) {
-        var captionPx = captionLines * 28;
-        var rectW = bounds.width + bx * 2;
-        var baseH = bounds.height + by * 2;
-        var scaleW = viewerEl.clientWidth / rectW;
-        var scaleH = (viewerEl.clientHeight - captionPx) / baseH;
-        captionVp = captionPx / Math.min(scaleW, scaleH);
-    }
     viewer.viewport.fitBounds(new OpenSeadragon.Rect(
         bounds.x - bx, bounds.y - by,
-        bounds.width + bx * 2, bounds.height + by * 2 + captionVp
+        bounds.width + bx * 2, bounds.height + by * 2
     ));
 }
 
@@ -293,93 +272,18 @@ function findFeaturedIndex() {
     return bestIndex;
 }
 
-// Text overlay: separate canvas layered on top of OSD, redrawn each frame
-var textCanvas = document.createElement("canvas");
-textCanvas.style.cssText = "position:absolute;top:0;left:0;pointer-events:none";
-viewer.container.appendChild(textCanvas);
-var textCtx = textCanvas.getContext("2d");
-
-function resizeTextCanvas() {
-    var ratio = window.devicePixelRatio || 1;
-    textCanvas.width = viewerEl.clientWidth * ratio;
-    textCanvas.height = viewerEl.clientHeight * ratio;
-    textCanvas.style.width = viewerEl.clientWidth + "px";
-    textCanvas.style.height = viewerEl.clientHeight + "px";
-}
-resizeTextCanvas();
 var relayoutTimer = null;
 new ResizeObserver(function() {
-    resizeTextCanvas();
     clearTimeout(relayoutTimer);
     relayoutTimer = setTimeout(relayout, 150);
 }).observe(viewerEl);
 
-// Font size in viewport coords — sized to fit in the gap between rows
-var labelFontVp = cfg.labelFontVp !== undefined ? cfg.labelFontVp : gap * 0.3;
-var labelMinPx = cfg.labelMinPx !== undefined ? cfg.labelMinPx : 8;
-var labelMaxPx = cfg.labelMaxPx !== undefined ? cfg.labelMaxPx : 18;
-var captionLineSizes = cfg.captionLineSizes || [1.0];
-var subtitleMinZoom = cfg.subtitleMinZoom !== undefined ? cfg.subtitleMinZoom : 0;
-
 var hashNavPending = !!initialHash;
 viewer.addHandler("update-viewport", function() {
-    var ratio = window.devicePixelRatio || 1;
-    textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
-
     var vb = viewer.viewport.getBounds(true);
-
-    // Clear hash when no image is featured (unless navigating to hash on load)
     if (!hashNavPending && findFeaturedIndex() === -1 && location.hash) {
         history.replaceState(null, "", location.pathname + location.search);
     }
-    var pxPerUnit = viewerEl.clientWidth / vb.width;
-
-    // Draw text labels below images
-    var fontPx = labelFontVp * pxPerUnit;
-    var labelsVisible = fontPx >= labelMinPx;
-    var drawPx = labelsVisible ? Math.min(fontPx, labelMaxPx) : labelMinPx;
-
-    textCtx.save();
-    textCtx.scale(ratio, ratio);
-    textCtx.fillStyle = "rgba(255,255,255,1)";
-    textCtx.textAlign = "center";
-    textCtx.textBaseline = "top";
-
-    for (var i = 0; i < tiledImages.length; i++) {
-        if (!tiledImages[i]) continue;
-        // Skip non-featured images when labels are too small
-        if (!labelsVisible && !isFeatured(tiledImages[i], vb)) continue;
-
-        var b = tiledImages[i].getBounds(true);
-        var cx = b.x + b.width / 2;
-        var offsetVp = Math.min(gap * 0.15, 8 / pxPerUnit);
-        var ty = b.y + b.height + offsetVp;
-
-        if (cx < vb.x - b.width || cx > vb.x + vb.width + b.width) continue;
-        if (ty < vb.y || ty > vb.y + vb.height) continue;
-
-        // No labels if no captions data
-        if (captionLines === 0) continue;
-
-        var pixel = viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(cx, ty), true);
-        var key = layout.placements[i].dzi.replace(".dzi", "");
-        var cap = captionData[key];
-        if (!cap) continue;
-
-        var lines = [];
-        if (cap.title) lines.push({ text: cap.title, size: captionLineSizes[0] || 1.0 });
-        if (cap.subtitle && viewer.viewport.getZoom() >= subtitleMinZoom) lines.push({ text: cap.subtitle, size: captionLineSizes[1] !== undefined ? captionLineSizes[1] : captionLineSizes[0] || 1.0 });
-        if (!lines.length) continue;
-
-        var lineY = pixel.y;
-        for (var li = 0; li < lines.length; li++) {
-            var linePx = drawPx * lines[li].size;
-            textCtx.font = "300 " + linePx.toFixed(2) + "px Raleway, sans-serif";
-            textCtx.fillText(lines[li].text, pixel.x, lineY);
-            lineY += linePx * 1.4;
-        }
-    }
-    textCtx.restore();
 });
 
 // Block OSD's default keyboard panning so it doesn't fight with our navigation
