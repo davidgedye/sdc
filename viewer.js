@@ -124,48 +124,49 @@ var tileSources = layout.placements.map(function(p, i) {
             tiledImages[i] = event.item;
             loaded++;
             if (loaded === layout.placements.length) {
-                for (var j = 0; j < tiledImages.length; j++) {
-                    tiledImages[j].setOpacity(1);
-                    tiledImages[j].setPosition(
-                        new OpenSeadragon.Point(gx + layout.placements[j].x, gy + layout.placements[j].y)
-                    );
-                    tiledImages[j].setWidth(layout.placements[j].width);
-                }
-                // Navigate to hash target after intro animation
-                if (initialHash) {
-                    for (var j = 0; j < layout.placements.length; j++) {
-                        if (imageKey(j) === initialHash) {
-                            hashNavPending = true;
-                            (function(target) {
-                                setTimeout(function() {
-                                    hashNavPending = false;
-                                    // Snap all images to final positions immediately
-                                    for (var k = 0; k < tiledImages.length; k++) {
-                                        tiledImages[k].setPosition(
-                                            new OpenSeadragon.Point(gx + layout.placements[k].x, gy + layout.placements[k].y), true
-                                        );
-                                        tiledImages[k].setWidth(layout.placements[k].width, true);
-                                    }
-                                    snapSprings();
-                                    zoomToImage(target);
-                                }, 3000);
-                            })(j);
-                            break;
+                requestAnimationFrame(function() {
+                    for (var j = 0; j < tiledImages.length; j++) {
+                        tiledImages[j].setOpacity(1);
+                        tiledImages[j].setPosition(
+                            new OpenSeadragon.Point(gx + layout.placements[j].x, gy + layout.placements[j].y)
+                        );
+                        tiledImages[j].setWidth(layout.placements[j].width);
+                    }
+                    // Navigate to hash target after intro animation
+                    if (initialHash) {
+                        for (var j = 0; j < layout.placements.length; j++) {
+                            if (imageKey(j) === initialHash) {
+                                hashNavPending = true;
+                                (function(target) {
+                                    setTimeout(function() {
+                                        hashNavPending = false;
+                                        for (var k = 0; k < tiledImages.length; k++) {
+                                            tiledImages[k].setPosition(
+                                                new OpenSeadragon.Point(gx + layout.placements[k].x, gy + layout.placements[k].y), true
+                                            );
+                                            tiledImages[k].setWidth(layout.placements[k].width, true);
+                                        }
+                                        snapSprings();
+                                        zoomToImage(target);
+                                    }, 3000);
+                                })(j);
+                                break;
+                            }
                         }
                     }
-                }
-                // Reset to snappy animation on first interaction
-                function snapSprings() {
-                    viewer.viewport.centerSpringX.animationTime = 3.5;
-                    viewer.viewport.centerSpringY.animationTime = 3.5;
-                    viewer.viewport.zoomSpring.animationTime = 3.5;
-                    viewerEl.removeEventListener("pointerdown", snapSprings, true);
-                    viewerEl.removeEventListener("wheel", snapSprings, true);
-                    window.removeEventListener("keydown", snapSprings, true);
-                }
-                viewerEl.addEventListener("pointerdown", snapSprings, true);
-                viewerEl.addEventListener("wheel", snapSprings, true);
-                window.addEventListener("keydown", snapSprings, true);
+                    // Reset to snappy animation on first interaction
+                    function snapSprings() {
+                        viewer.viewport.centerSpringX.animationTime = 3.5;
+                        viewer.viewport.centerSpringY.animationTime = 3.5;
+                        viewer.viewport.zoomSpring.animationTime = 3.5;
+                        viewerEl.removeEventListener("pointerdown", snapSprings, true);
+                        viewerEl.removeEventListener("wheel", snapSprings, true);
+                        window.removeEventListener("keydown", snapSprings, true);
+                    }
+                    viewerEl.addEventListener("pointerdown", snapSprings, true);
+                    viewerEl.addEventListener("wheel", snapSprings, true);
+                    window.addEventListener("keydown", snapSprings, true);
+                });
             }
         }
     };
