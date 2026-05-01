@@ -1,5 +1,5 @@
 var cfg = (typeof viewerConfig !== "undefined" && viewerConfig) || {};
-var gap = cfg.gap !== undefined ? cfg.gap : 0.01;
+var gap = cfg.gap !== undefined ? cfg.gap : 0.02;
 var gapY = cfg.gapY !== undefined ? cfg.gapY : gap;
 var totalWidth = 1; // layout fits in [0, 1] horizontally
 var initialHash = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
@@ -118,7 +118,7 @@ var layout = computeLayout(images, viewportAspect);
 var tiledImages = [];
 var loaded = 0;
 var startScale = 0.001;
-var gutterFraction = cfg.gutterFraction !== undefined ? cfg.gutterFraction : 0.01;
+var gutterFraction = cfg.gutterFraction !== undefined ? cfg.gutterFraction : 0.02;
 var gutterFractionY = cfg.gutterFractionY !== undefined ? cfg.gutterFractionY : gutterFraction;
 var gx = totalWidth * gutterFraction;
 var gy = layout.totalHeight * gutterFractionY;
@@ -315,7 +315,7 @@ new ResizeObserver(function() {
 }).observe(viewerEl);
 
 // Font size in viewport coords — sized to fit in the gap between rows
-var labelFontVp = cfg.labelFontVp !== undefined ? cfg.labelFontVp : gap * 0.6;
+var labelFontVp = cfg.labelFontVp !== undefined ? cfg.labelFontVp : gap * 0.3;
 var labelMinPx = cfg.labelMinPx !== undefined ? cfg.labelMinPx : 8;
 var labelMaxPx = cfg.labelMaxPx !== undefined ? cfg.labelMaxPx : 18;
 var captionLineSizes = cfg.captionLineSizes || [1.0];
